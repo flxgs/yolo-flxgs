@@ -7,7 +7,7 @@ gradio
 transformers
 addict
 yapf
-numpy
+numpy==1.26.4
 opencv-python
 supervision==0.18.0
 ftfy
@@ -19,7 +19,7 @@ onnx
 onnxruntime
 onnxruntime-gpu
 onnx-simplifier
-
+cog
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch==2.0.1
 torchvision==0.15.2
