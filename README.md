@@ -152,3 +152,4 @@ If you find YOLO-World is useful in your research or applications, please consid
 ## Licence
 YOLO-World is under the GPL-v3 Licence and is supported for comercial usage.
 # yolo-flxgs
+# yolo-flxgs
