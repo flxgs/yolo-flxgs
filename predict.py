@@ -176,8 +176,10 @@ def run_image(
                 detections["class_name"], detections.confidence
             )
         ]
-        annotated_image = image.copy()
-        annotated_image = BOUNDING_BOX_ANNOTATOR.annotate(annotated_image, detections)
+        # Create a black background with the same dimensions as the input image
+        black_image = np.zeros_like(image)
+        # Draw annotations on the black background
+        annotated_image = BOUNDING_BOX_ANNOTATOR.annotate(black_image, detections)
         annotated_image = LABEL_ANNOTATOR.annotate(annotated_image, detections, labels)
         return annotated_image
 
