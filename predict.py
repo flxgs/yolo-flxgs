@@ -33,9 +33,12 @@ from torchvision.ops import nms
 from mmengine.runner.amp import autocast
 
 
-BOUNDING_BOX_ANNOTATOR = sv.BoundingBoxAnnotator()
+# Create two annotators - one with fill and one without
+BOUNDING_BOX_ANNOTATOR_NO_FILL = sv.BoundingBoxAnnotator(color=sv.ColorPalette.default())
+BOUNDING_BOX_ANNOTATOR_WITH_FILL = sv.BoundingBoxAnnotator(color=sv.ColorPalette.default(), thickness=2, fill_color=sv.ColorPalette.default())
 LABEL_ANNOTATOR = sv.LabelAnnotator(text_color=sv.Color.BLACK)
 JSON_RESP = []
+FRAME_COUNTER = 0  # Global counter to track frames
 
 
 class Output(BaseModel):
@@ -129,6 +132,7 @@ def run_image(
     max_num_boxes: int = 100,
     score_thr: float = 0.05,
     nms_thr: float = 0.5,
+    frame_number: Optional[int] = None,  # Add frame_number parameter
 ):
     global JSON_RESP
     with NamedTemporaryFile(suffix=".jpeg") as f:
@@ -176,10 +180,16 @@ def run_image(
                 detections["class_name"], detections.confidence
             )
         ]
-        # Create a black background with the same dimensions as the input image
+        
+        # Create a black background
         black_image = np.zeros_like(image)
-        # Draw annotations on the black background
-        annotated_image = BOUNDING_BOX_ANNOTATOR.annotate(black_image, detections)
+        
+        # Determine which annotator to use based on frame number
+        if frame_number is not None and (frame_number % 20) < 10:  # Fill for 10 frames, then no fill for 10 frames
+            annotated_image = BOUNDING_BOX_ANNOTATOR_WITH_FILL.annotate(black_image, detections)
+        else:
+            annotated_image = BOUNDING_BOX_ANNOTATOR_NO_FILL.annotate(black_image, detections)
+            
         annotated_image = LABEL_ANNOTATOR.annotate(annotated_image, detections, labels)
         return annotated_image
 
@@ -312,17 +322,22 @@ def process_batch(
     score_thr: float,
     nms_thr: float,
 ) -> None:
+    global FRAME_COUNTER
     # This function processes a batch of frames
     for i, frame in enumerate(frames_batch):
         annotated_frame = run_image(
-            runner, frame, text, max_num_boxes, score_thr, nms_thr
+            runner, frame, text, max_num_boxes, score_thr, nms_thr,
+            frame_number=FRAME_COUNTER  # Pass the frame number
         )
         cv2.imwrite(frame_paths[i], annotated_frame)
+        FRAME_COUNTER += 1  # Increment frame counter
 
 
 class Predictor(BasePredictor):
     def setup(self) -> None:
-
+        global FRAME_COUNTER
+        FRAME_COUNTER = 0  # Reset frame counter in setup
+        
         args = parse_args()
 
         # load config
