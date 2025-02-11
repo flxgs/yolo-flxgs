@@ -184,12 +184,33 @@ def run_image(
         # Create a black background
         black_image = np.zeros_like(image)
         
-        # Determine which annotator to use based on frame number
-        if frame_number is not None and (frame_number % 20) < 10:  # Fill for 10 frames, then no fill for 10 frames
-            annotated_image = BOUNDING_BOX_ANNOTATOR_WITH_FILL.annotate(black_image, detections)
-        else:
-            annotated_image = BOUNDING_BOX_ANNOTATOR_NO_FILL.annotate(black_image, detections)
-            
+        # Create a random mask for which boxes should be filled
+        fill_mask = np.random.choice([True, False], size=len(detections))
+        
+        # Start with an empty image
+        annotated_image = black_image.copy()
+        
+        # Apply filled boxes
+        if np.any(fill_mask):
+            filled_detections = sv.Detections(
+                xyxy=detections.xyxy[fill_mask],
+                confidence=detections.confidence[fill_mask],
+                class_id=detections.class_id[fill_mask],
+                data={"class_name": detections.data["class_name"][fill_mask]}
+            )
+            annotated_image = BOUNDING_BOX_ANNOTATOR_WITH_FILL.annotate(annotated_image, filled_detections)
+        
+        # Apply unfilled boxes
+        if np.any(~fill_mask):
+            unfilled_detections = sv.Detections(
+                xyxy=detections.xyxy[~fill_mask],
+                confidence=detections.confidence[~fill_mask],
+                class_id=detections.class_id[~fill_mask],
+                data={"class_name": detections.data["class_name"][~fill_mask]}
+            )
+            annotated_image = BOUNDING_BOX_ANNOTATOR_NO_FILL.annotate(annotated_image, unfilled_detections)
+        
+        # Add labels for all detections
         annotated_image = LABEL_ANNOTATOR.annotate(annotated_image, detections, labels)
         return annotated_image
 
