@@ -35,7 +35,11 @@ from mmengine.runner.amp import autocast
 
 # Create two annotators - one with fill and one without
 BOUNDING_BOX_ANNOTATOR_NO_FILL = sv.BoundingBoxAnnotator(color=sv.ColorPalette.default())
-BOUNDING_BOX_ANNOTATOR_WITH_FILL = sv.BoundingBoxAnnotator(color=sv.ColorPalette.default(), thickness=2, fill_color=sv.ColorPalette.default())
+BOUNDING_BOX_ANNOTATOR_WITH_FILL = sv.BoundingBoxAnnotator(
+    color=sv.ColorPalette.default(),
+    thickness=2,
+    fill_color=[*sv.ColorPalette.default(), 0.3]  # Adding alpha channel for transparency
+)
 LABEL_ANNOTATOR = sv.LabelAnnotator(text_color=sv.Color.BLACK)
 JSON_RESP = []
 FRAME_COUNTER = 0  # Global counter to track frames
@@ -184,8 +188,8 @@ def run_image(
         # Create a black background
         black_image = np.zeros_like(image)
         
-        # Create a random mask for which boxes should be filled
-        fill_mask = np.random.choice([True, False], size=len(detections))
+        # Create a random mask for which boxes should be filled (30% chance of fill)
+        fill_mask = np.random.choice([True, False], size=len(detections), p=[0.3, 0.7])
         
         # Start with an empty image
         annotated_image = black_image.copy()
